@@ -17,11 +17,15 @@ const BookingHotel = sequelize.define('Booking', { //studio Anime
         primaryKey: true
     },
     User_id: { // foreign key to Studio
-        type: Sequelize.STRING,
+        type: Sequelize.INTEGER,
         foreignKey: false
     },
     Type_id:{
-        type: Sequelize.STRING,
+        type: Sequelize.INTEGER,
+        foreignKey: false
+    },
+    Room:{
+        type: Sequelize.INTEGER,
         foreignKey: false
     }
 }, {
@@ -61,7 +65,28 @@ const RoomType = sequelize.define('RoomType', {
         allowNull: false
     }
 });
-
+const Room = sequelize.define('Room', {
+    room_id: {
+        type: Sequelize.INTEGER,
+        autoIncrement: true,
+        primaryKey: true
+    }, 
+    Type_id:{
+        type: Sequelize.STRING,
+        allowNull: false
+    },
+    Type_Name:{
+        type: Sequelize.STRING,
+        allowNull: false
+    },
+    price:{
+        type: Sequelize.INTEGER,
+        allowNull: false
+    }
+});
+BookingHotel.belongsTo(Users, { foreignKey: 'User_id', as: 'belongsToUsers' });
+BookingHotel.belongsTo(RoomType, { foreignKey: 'Type_id', as: 'belongsToRoomType' });
+BookingHotel.belongsTo(Room, { foreignKey: 'room_id', as: 'belongsToRoom' });
 // Assuming you have already defined your Sequelize model and set up the database connection
 sequelize.sync();
 // Create a new user
