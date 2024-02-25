@@ -66,7 +66,7 @@ const RoomType = sequelize.define('RoomType', {
     }
 });
 const Room = sequelize.define('Room', {
-    room_id: {
+    Room_id: {
         type: Sequelize.INTEGER,
         autoIncrement: true,
         primaryKey: true
@@ -84,12 +84,167 @@ const Room = sequelize.define('Room', {
         allowNull: false
     }
 });
+
 BookingHotel.belongsTo(Users, { foreignKey: 'User_id', as: 'belongsToUsers' });
 BookingHotel.belongsTo(RoomType, { foreignKey: 'Type_id', as: 'belongsToRoomType' });
-BookingHotel.belongsTo(Room, { foreignKey: 'room_id', as: 'belongsToRoom' });
+BookingHotel.belongsTo(Room, { foreignKey: 'Room_id', as: 'belongsToRoom' });
+
 // Assuming you have already defined your Sequelize model and set up the database connection
-sequelize.sync();
+sequelize.sync()
 // Create a new user
+app.get('/Booking', (req, res) => {
+    BookingHotel.findAll({
+      include: [
+        {
+          model: Users,
+          as: 'belongsToUsers',
+          attributes: ['Users'],
+        },
+        {
+          model: RoomType,
+          as: 'belongsToRoomType',
+          attributes: ['RoomType'],
+        },
+        {
+        model: Room,
+        as: 'belongsToRoom',
+        attributes: ['Room_id'],
+        },
+      ],
+    })
+      .then(Booking => {
+        // Process the retrieved values here
+        const formattedBooking = Booking.map(Booking => {
+          return {
+            Booking_id: Booking .Booking_id,
+            User_id: Booking .User_id,
+            Type_id: Booking .Type_id,
+            Room: Booking .Room,
+            Users: Booking .belongsToUsers.Users,
+            RoomType: Booking .belongsToRoomType.RoomType,
+            Room: Booking .belongsToRoom.Room,
+          };
+        });
+        console.log(formattedBooking);
+        res.json(formattedBooking); 
+      })
+      .catch(err => {
+        res.status(500).send(err);
+      });
+  });
+
+  
+  app.get('/Booking', (req, res) => {
+    BookingHotel.findAll({
+      attributes: [
+        'Booking_id',
+        'User_id',
+        'Type_id',
+        'Room',
+        'Room_id',
+        [sequelize.fn('GROUP_CONCAT', sequelize.col('belongsToRoomType.RoomType')), 'RoomTypes'],
+      ],
+      include: [
+        {
+          model: Users,
+          as: 'belongsToUsers',
+          attributes: [],
+        },
+        {
+          model: RoomType,
+          as: 'belongsToRoomType',
+          attributes: [],
+        },
+        {
+          model: Room,
+          as: 'belongsToRoom',
+          attributes: [],
+        },
+      ],
+      group: ['Booking_id', 'User_id', 'Type_id', 'Room', 'room_id'],
+    })
+      .then(bookings => {
+        const formattedBookings = bookings.map(booking => ({
+          Booking_id: booking.Booking_id,
+          User_id: booking.User_id,
+          Type_id: booking.Type_id,
+          Room: booking.Room,
+          Room_id: booking.room_id,
+          RoomTypes: booking.getDataValue('RoomTypes'),
+        }));
+        console.log(formattedBookings);
+        res.json(formattedBookings);
+      })
+      .catch(err => {
+        res.status(500).send(err);
+      });
+});
+//---Booking--------------------------------------------------------------------------------
+app.post('/Booking', async (req, res) => {
+    try {
+        const newBooking = await BookingHotel.create(req.body);
+        res.status(201).json(newBooking);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all Booking
+app.get('/Booking', async (req, res) => {
+    try {
+        const allBookings = await BookingHotel.findAll();
+        res.json(allBookings);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get Booking by ID
+app.get('/Booking/:id', async (req, res) => {
+    try {
+        const booking = await BookingHotel.findByPk(req.params.id);
+        if (!booking) {
+            res.status(404).json({ error: 'Booking not found' });
+        } else {
+            res.json(booking);
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Update Booking by ID
+app.put('/Booking/:id', async (req, res) => {
+    try {
+        const booking = await BookingHotel.findByPk(req.params.id);
+        if (!booking) {
+            res.status(404).json({ error: 'Booking not found' });
+        } else {
+            await booking.update(req.body);
+            res.json(booking);
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete Booking by ID
+app.delete('/Booking/:id', async (req, res) => {
+    try {
+        const booking = await BookingHotel.findByPk(req.params.id);
+        if (!booking) {
+            res.status(404).json({ error: 'Booking not found' });
+        } else {
+            await booking.destroy();
+            res.status(204).end();
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+//--Users-----------------------------------------------------------------------------
 app.post('/users', async (req, res) => {
     try {
         const newUser = await Users.create(req.body);
@@ -152,6 +307,135 @@ app.delete('/users/:id', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+//---RoomType--------------------------------------------------------------------------------
+// Create a new RoomType
+app.post('/RoomType', async (req, res) => {
+    try {
+        const newRoomType = await RoomType.create(req.body);
+        res.status(201).json(newRoomType);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all RoomType
+app.get('/RoomType', async (req, res) => {
+    try {
+        const allRoomTypes = await RoomType.findAll();
+        res.json(allRoomTypes);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get RoomType by ID
+app.get('/RoomType/:id', async (req, res) => {
+    try {
+        const roomType = await RoomType.findByPk(req.params.id);
+        if (!roomType) {
+            res.status(404).json({ error: 'RoomType not found' });
+        } else {
+            res.json(roomType);
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Update RoomType by ID
+app.put('/RoomType/:id', async (req, res) => {
+    try {
+        const roomType = await RoomType.findByPk(req.params.id);
+        if (!roomType) {
+            res.status(404).json({ error: 'RoomType not found' });
+        } else {
+            await roomType.update(req.body);
+            res.json(roomType);
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete RoomType by ID
+app.delete('/RoomType/:id', async (req, res) => {
+    try {
+        const roomType = await RoomType.findByPk(req.params.id);
+        if (!roomType) {
+            res.status(404).json({ error: 'RoomType not found' });
+        } else {
+            await roomType.destroy();
+            res.status(204).end();
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+//---Room----------------------------------------------------------------------------------------------
+// Create a new room
+app.post('/Room', async (req, res) => {
+    try {
+        const newRoom = await Room.create(req.body);
+        res.status(201).json(newRoom);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all rooms
+app.get('/Room', async (req, res) => {
+    try {
+        const allRooms = await Room.findAll();
+        res.json(allRooms);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get room by ID
+app.get('/Room/:id', async (req, res) => {
+    try {
+        const room = await Room.findByPk(req.params.id);
+        if (!room) {
+            res.status(404).json({ error: 'Room not found' });
+        } else {
+            res.json(room);
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Update room by ID
+app.put('/Room/:id', async (req, res) => {
+    try {
+        const room = await Room.findByPk(req.params.id);
+        if (!room) {
+            res.status(404).json({ error: 'Room not found' });
+        } else {
+            await room.update(req.body);
+            res.json(room);
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete room by ID
+app.delete('/Room/:id', async (req, res) => {
+    try {
+        const room = await Room.findByPk(req.params.id);
+        if (!room) {
+            res.status(404).json({ error: 'Room not found' });
+        } else {
+            await room.destroy();
+            res.status(204).end();
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 
 // Start the server
 const port = process.env.PORT || 3000;
