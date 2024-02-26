@@ -92,94 +92,7 @@ BookingHotel.belongsTo(Room, { foreignKey: 'Room_id', as: 'belongsToRoom' });
 // Assuming you have already defined your Sequelize model and set up the database connection
 sequelize.sync()
 // Create a new user
-app.get('/Booking', (req, res) => {
-    BookingHotel.findAll({
-      include: [
-        {
-          model: Users,
-          as: 'belongsToUsers',
-          attributes: ['Users'],
-        },
-        {
-          model: RoomType,
-          as: 'belongsToRoomType',
-          attributes: ['RoomType'],
-        },
-        {
-        model: Room,
-        as: 'belongsToRoom',
-        attributes: ['Room_id'],
-        },
-      ],
-    })
-      .then(Booking => {
-        // Process the retrieved values here
-        const formattedBooking = Booking.map(Booking => {
-          return {
-            Booking_id: Booking .Booking_id,
-            User_id: Booking .User_id,
-            Type_id: Booking .Type_id,
-            Room: Booking .Room,
-            Users: Booking .belongsToUsers.Users,
-            RoomType: Booking .belongsToRoomType.RoomType,
-            Room: Booking .belongsToRoom.Room,
-          };
-        });
-        console.log(formattedBooking);
-        res.json(formattedBooking); 
-      })
-      .catch(err => {
-        res.status(500).send(err);
-      });
-  });
-
-  
-  app.get('/Booking', (req, res) => {
-    BookingHotel.findAll({
-      attributes: [
-        'Booking_id',
-        'User_id',
-        'Type_id',
-        'Room',
-        'Room_id',
-        [sequelize.fn('GROUP_CONCAT', sequelize.col('belongsToRoomType.RoomType')), 'RoomTypes'],
-      ],
-      include: [
-        {
-          model: Users,
-          as: 'belongsToUsers',
-          attributes: [],
-        },
-        {
-          model: RoomType,
-          as: 'belongsToRoomType',
-          attributes: [],
-        },
-        {
-          model: Room,
-          as: 'belongsToRoom',
-          attributes: [],
-        },
-      ],
-      group: ['Booking_id', 'User_id', 'Type_id', 'Room', 'room_id'],
-    })
-      .then(bookings => {
-        const formattedBookings = bookings.map(booking => ({
-          Booking_id: booking.Booking_id,
-          User_id: booking.User_id,
-          Type_id: booking.Type_id,
-          Room: booking.Room,
-          Room_id: booking.room_id,
-          RoomTypes: booking.getDataValue('RoomTypes'),
-        }));
-        console.log(formattedBookings);
-        res.json(formattedBookings);
-      })
-      .catch(err => {
-        res.status(500).send(err);
-      });
-});
-//---Booking--------------------------------------------------------------------------------
+// Create a new booking
 app.post('/Booking', async (req, res) => {
     try {
         const newBooking = await BookingHotel.create(req.body);
@@ -189,7 +102,7 @@ app.post('/Booking', async (req, res) => {
     }
 });
 
-// Get all Booking
+// Get all bookings
 app.get('/Booking', async (req, res) => {
     try {
         const allBookings = await BookingHotel.findAll();
@@ -199,7 +112,7 @@ app.get('/Booking', async (req, res) => {
     }
 });
 
-// Get Booking by ID
+// Get booking by ID
 app.get('/Booking/:id', async (req, res) => {
     try {
         const booking = await BookingHotel.findByPk(req.params.id);
@@ -213,7 +126,7 @@ app.get('/Booking/:id', async (req, res) => {
     }
 });
 
-// Update Booking by ID
+// Update booking by ID
 app.put('/Booking/:id', async (req, res) => {
     try {
         const booking = await BookingHotel.findByPk(req.params.id);
@@ -228,7 +141,7 @@ app.put('/Booking/:id', async (req, res) => {
     }
 });
 
-// Delete Booking by ID
+// Delete booking by ID
 app.delete('/Booking/:id', async (req, res) => {
     try {
         const booking = await BookingHotel.findByPk(req.params.id);
